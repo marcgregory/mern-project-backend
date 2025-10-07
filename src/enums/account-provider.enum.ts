@@ -5,4 +5,5 @@ export const ProviderEnum = {
   EMAIL: "EMAIL",
 };
 
-export type ProviderEnumType = keyof typeof ProviderEnum;
+export type ProviderEnumType = keyof typeof ProviderEnum; // keyof union type containing all property names
+//"GOOGLE" | "GITHUB" | "FACEBOOK" | "EMAIL"

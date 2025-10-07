@@ -9,6 +9,10 @@ import { HTTPSTATUS } from "./config/http.config";
 import { asyncHandler } from "./middlewares/asyncHandler.middleware";
 import { BadRequestException } from "./utils/appError";
 
+import "./config/passport.config";
+import passport from "passport";
+import authRoutes from "./routes/auth.route";
+
 const app = express();
 
 const BASE_PATH = config.BASE_PATH;
@@ -28,6 +32,10 @@ app.use(
   })
 );
 
+app.use(passport.initialize()); //Initializes Passport for every request.
+//It sets up Passport’s internal middleware so Express knows how to use it.
+app.use(passport.session()); //Enables persistent login sessions using cookies.
+
 app.use(
   cors({
     origin: config.FRONTEND_ORIGIN, //Defines which website (domain) is allowed to access your backend API
@@ -44,6 +52,8 @@ app.get(
       .json({ message: "Hello Subscribe to the channel & share " });
   })
 );
+
+app.use(`${BASE_PATH}/auth`, authRoutes);
 
 app.use(errorHandler);
 

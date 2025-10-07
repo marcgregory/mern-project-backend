@@ -20,3 +20,5 @@ export const ErrorCodeEnum = {
 } as const;
 
 export type ErrorCodeEnumType = keyof typeof ErrorCodeEnum;
+// keyof union type containing all property names
+//"GOOGLE" | "GITHUB" | "FACEBOOK" | "EMAIL"
