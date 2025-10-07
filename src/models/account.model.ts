@@ -1,4 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
+//Schema → defines how documents are structured.
+
+//Document → the base TypeScript type for MongoDB documents (includes _id, timestamps, etc.).
 import { ProviderEnumType, ProviderEnum } from "../enums/account-provider.enum";
 
 export interface AccountDocument extends Document {
@@ -27,7 +30,7 @@ const accountSchema = new Schema<AccountDocument>(
     tokenExpiry: { type: Date, default: null },
   },
   {
-    timestamps: true,
+    timestamps: true, // auto updatedAt and createdAt
     toJSON: {
       transform(doc, ret) {
         //Mongoose provides options like toJSON and toObject to customize how your document looks when it’s converted into a plain object or JSON — such as before sending it in an API response.

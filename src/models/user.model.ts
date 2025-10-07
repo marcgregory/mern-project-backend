@@ -1,4 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
+//Schema → defines how documents are structured.
+
+//Document → the base TypeScript type for MongoDB documents (includes _id, timestamps, etc.).
 import { compareValue, hashValue } from "../utils/bcrypt";
 
 export interface UserDocument extends Document {
