@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# test files (optional)
+**/*.spec.ts
+**/*.test.ts
+
+# environment variables
+.env
+
+# logs
+logs/
+*.log
+
+# system files
+.DS_Store
