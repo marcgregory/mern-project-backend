@@ -9,7 +9,8 @@ dist/
 **/*.test.ts
 
 # environment variables
-.env
+
+.env*
 
 # logs
 logs/
