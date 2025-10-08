@@ -17,7 +17,7 @@ authRoutes.post("/login", loginController);
 authRoutes.post("/logout", logOutController);
 authRoutes.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile"] })
+  passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
 authRoutes.get(
