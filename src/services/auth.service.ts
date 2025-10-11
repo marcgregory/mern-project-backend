@@ -11,15 +11,7 @@ import {
 } from "../utils/appError";
 import MemberModel from "../models/member.model";
 import { ProviderEnum } from "../enums/account-provider.enum";
-
-const supportsTransactionsCheck = () => {
-  const connection = mongoose.connection as any;
-
-  return (
-    connection.readyState === 1 &&
-    connection.client?.topology?.description?.type !== "Single"
-  );
-};
+import { supportsTransactionsCheck } from "../utils/sessionCheckSupport";
 
 export const loginOrCreateAccountService = async (data: {
   provider: string;
@@ -118,19 +110,21 @@ export const registerUserService = async (body: {
 }) => {
   const { email, name, password } = body;
 
-  // let session: mongoose.ClientSession | null = null;
+  let session: mongoose.ClientSession | null = null;
 
-  const session = await mongoose.startSession(); // A session is required if you want to use MongoDB transactions, which let you treat multiple database operations as a single unit — either all succeed or all fail.
   try {
-    // if (supportsTransactionsCheck()) {
-    // session does not work on local DB that's why we check if supported
-    session.startTransaction(); // Starts a transaction within the session. A set of operations (like insert, update, delete) that are atomic — meaning either all changes are applied or none are.
-    console.log("✅ Transactions supported — using session");
-    // } else {
-    //   console.log("⚠️ Transactions not supported — running without session");
-    // }
+    if (supportsTransactionsCheck()) {
+      // session does not work on local DB that's why we check if supported
+      session = await mongoose.startSession(); // A session is required if you want to use MongoDB transactions, which let you treat multiple database operations as a single unit — either all succeed or all fail.
+      session.startTransaction(); // Starts a transaction within the session. A set of operations (like insert, update, delete) that are atomic — meaning either all changes are applied or none are.
+      console.log("✅ Transactions supported — using session");
+    } else {
+      console.log("⚠️ Transactions not supported — running without session");
+    }
 
-    const existingUser = await UserModel.findOne({ email }).session(session);
+    const existingUser = session
+      ? await UserModel.findOne({ email }).session(session)
+      : await UserModel.findOne({ email });
 
     if (existingUser) {
       throw new BadRequestException("Email already exists");
@@ -138,7 +132,7 @@ export const registerUserService = async (body: {
 
     const user = new UserModel({ email, name, password });
 
-    await user.save({ session });
+    await user.save(session ? { session } : {});
 
     const account = new AccountModel({
       userId: user._id,
@@ -146,7 +140,7 @@ export const registerUserService = async (body: {
       providerId: email,
     });
 
-    await account.save({ session });
+    await account.save(session ? { session } : {});
 
     // 3. Create a new workspace for the new user
 
@@ -156,11 +150,11 @@ export const registerUserService = async (body: {
       owner: user._id,
     });
 
-    await workspace.save({ session });
+    await workspace.save(session ? { session } : {});
 
-    const ownerRole = await RoleModel.findOne({ name: Roles.OWNER }).session(
-      session
-    );
+    const ownerRole = session
+      ? await RoleModel.findOne({ name: Roles.OWNER }).session(session)
+      : await RoleModel.findOne({ name: Roles.OWNER });
 
     if (!ownerRole) {
       throw new NotFoundException("Owner role not found");
@@ -172,22 +166,25 @@ export const registerUserService = async (body: {
       role: ownerRole._id,
       joinedAt: new Date(),
     });
-    await member.save({ session });
+    await member.save(session ? { session } : {});
     user.currentWorkspace = workspace._id as mongoose.Types.ObjectId;
-    await user.save({ session });
+    await user.save(session ? { session } : {});
 
-    await session.commitTransaction();
-    session.endSession();
-    console.log("End Session...");
+    if (session) {
+      await session.commitTransaction();
+      session.endSession();
+      console.log("End Session...");
+    }
 
     return {
       userId: user._id,
       workspaceId: workspace._id,
     };
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
+    if (session) {
+      await session.abortTransaction();
+      session.endSession();
+    }
     throw error;
   }
 };
